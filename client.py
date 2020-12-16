@@ -18,10 +18,23 @@ while package:
     package = file.read(1024)
 file.close()
 print("sent")
-clientSocket.shutdown(SHUT_WR)
+clientSocket.send("EOF".encode())
 
-new_model_file = open("new_model.pkl", 'wb')
+new_model_file = open("new_model.json", 'wb')
 package = clientSocket.recv(1024)
+print("Receiving model")
+while package:
+    print("Receiving")
+    if package.decode() == "EOF":
+        break
+    new_model_file.write(package)
+    package = clientSocket.recv(1024)
+print('Received')
+new_model_file.close()
+clientSocket.send("EOF".encode())
+new_model_file = open("new_model.h5", 'wb')
+package = clientSocket.recv(1024)
+print("Receiving model weights")
 while package:
     print("Receiving")
     new_model_file.write(package)
@@ -30,11 +43,11 @@ print('Received')
 new_model_file.close()
 clientSocket.close()
 
-json_model = open("model.json", 'r')
+json_model = open("new_model.json", 'r')
 loaded_model = json_model.read()
 json_model.close()
 loaded_model = model_from_json(loaded_model)
-loaded_model.load_weights("model.h5")
+loaded_model.load_weights("new_model.h5")
 loaded_model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9),
                              loss=tf.keras.losses.categorical_crossentropy,
                              metrics=['accuracy'])
