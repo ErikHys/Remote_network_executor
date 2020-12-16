@@ -5,6 +5,21 @@ from tensorflow.python.keras.utils.np_utils import to_categorical
 from tensorflow.keras.models import model_from_json
 import tensorflow as tf
 
+
+def receive_data(new_model_file, clientSocket, name):
+    package = clientSocket.recv(1024)
+    print("Receiving ", name)
+    while package:
+        print("Receiving")
+        if name == "model" and package.decode() == "EOF":
+            break
+        new_model_file.write(package)
+        package = clientSocket.recv(1024)
+    print('Received')
+    new_model_file.close()
+    clientSocket.send("EOF".encode())
+
+
 serverName = '127.0.0.1'
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -21,26 +36,9 @@ print("sent")
 clientSocket.send("EOF".encode())
 
 new_model_file = open("new_model.json", 'wb')
-package = clientSocket.recv(1024)
-print("Receiving model")
-while package:
-    print("Receiving")
-    if package.decode() == "EOF":
-        break
-    new_model_file.write(package)
-    package = clientSocket.recv(1024)
-print('Received')
-new_model_file.close()
-clientSocket.send("EOF".encode())
+receive_data(new_model_file, clientSocket, "model")
 new_model_file = open("new_model.h5", 'wb')
-package = clientSocket.recv(1024)
-print("Receiving model weights")
-while package:
-    print("Receiving")
-    new_model_file.write(package)
-    package = clientSocket.recv(1024)
-print('Received')
-new_model_file.close()
+receive_data(new_model_file, clientSocket, "model weights")
 clientSocket.close()
 
 json_model = open("new_model.json", 'r')

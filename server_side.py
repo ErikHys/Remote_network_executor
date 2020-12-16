@@ -6,6 +6,18 @@ serverSocket.bind(('', serverPort))
 serverSocket.listen(1)
 print('The server is ready to receive')
 
+
+def send_data(model_file, connectionSocket, name):
+    package = model_file.read(1024)
+    print("Sending ", name)
+    while package:
+        print("sending")
+        connectionSocket.send(package)
+        package = model_file.read(1024)
+    print("sent")
+    model_file.close()
+
+
 while True:
     connectionSocket, addr = serverSocket.accept()
     file = open('train_model.py', 'wb')
@@ -23,23 +35,9 @@ while True:
     exec(open('train_model.py').read())
     print("ran program")
     model_file = open('model.json', 'rb')
-    package = model_file.read(1024)
-    print("Sending model")
-    while package:
-        print("sending")
-        connectionSocket.send(package)
-        package = model_file.read(1024)
-    print("sent")
-    model_file.close()
+    send_data(model_file, connectionSocket, "model")
     connectionSocket.send("EOF".encode())
     connectionSocket.recv(1024)
     model_file = open('model.h5', 'rb')
-    package = model_file.read(1024)
-    print("Sending model weights")
-    while package:
-        print("sending")
-        connectionSocket.send(package)
-        package = model_file.read(1024)
-    print("sent")
-    model_file.close()
+    send_data(model_file, connectionSocket, "model weight")
     connectionSocket.close()
