@@ -22,8 +22,8 @@ def get_model():
     return model
 
 
-dataX = pd.read_csv("handwritten_digits_images.csv")
-dataY = pd.read_csv("handwritten_digits_labels.csv")
+dataX = pd.read_csv("dataX.csv")
+dataY = pd.read_csv("dataY.csv")
 X = dataX.to_numpy()
 Y = dataY.to_numpy()
 x_train, x_test, y_train, y_test = model_selection.train_test_split(X, Y, shuffle=True, test_size=0.2, random_state=27)

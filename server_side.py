@@ -11,27 +11,32 @@ def send_data(model_file, connectionSocket, name):
     package = model_file.read(1024)
     print("Sending ", name)
     while package:
-        print("sending")
         connectionSocket.send(package)
         package = model_file.read(1024)
     print("sent")
     model_file.close()
 
 
-while True:
-    connectionSocket, addr = serverSocket.accept()
-    file = open('train_model.py', 'wb')
+def receive_data(file, connectionSocket, name):
     package = connectionSocket.recv(1024)
-    print("Receiving program")
+    print("Receiving ", name)
     while package:
-        print("Receiving")
         if package.decode() == "EOF":
             break
         file.write(package)
         package = connectionSocket.recv(1024)
-    print("received")
+    print("received", name)
     file.close()
 
+
+while True:
+    connectionSocket, addr = serverSocket.accept()
+    file = open('train_model.py', 'wb')
+    receive_data(file, connectionSocket, "program")
+    file = open('dataX.csv', 'wb')
+    receive_data(file, connectionSocket, 'values')
+    file = open('dataY.csv', 'wb')
+    receive_data(file, connectionSocket, 'labels')
     exec(open('train_model.py').read())
     print("ran program")
     model_file = open('model.json', 'rb')

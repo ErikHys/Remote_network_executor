@@ -1,4 +1,4 @@
-from socket import socket, AF_INET, SOCK_STREAM, SHUT_WR
+from socket import socket, AF_INET, SOCK_STREAM
 import pandas as pd
 from sklearn import model_selection
 from tensorflow.python.keras.utils.np_utils import to_categorical
@@ -10,7 +10,6 @@ def receive_data(new_model_file, clientSocket, name):
     package = clientSocket.recv(1024)
     print("Receiving ", name)
     while package:
-        print("Receiving")
         if name == "model" and package.decode() == "EOF":
             break
         new_model_file.write(package)
@@ -20,21 +19,27 @@ def receive_data(new_model_file, clientSocket, name):
     clientSocket.send("EOF".encode())
 
 
+def send_data(file, clientSocket, name):
+    package = file.read(1024)
+    while package:
+        clientSocket.send(package)
+        package = file.read(1024)
+    file.close()
+    print("sent ", name)
+    clientSocket.send("EOF".encode())
+
+
 serverName = '127.0.0.1'
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 file_name = input("Enter filename(use hello_world.py for testing):")
 file = open(file_name, 'rb')
-package = file.read(1024)
-while package:
-    print("sending")
-    clientSocket.send(package)
-    package = file.read(1024)
-file.close()
-print("sent")
-clientSocket.send("EOF".encode())
-
+send_data(file, clientSocket, "program")
+file = open("handwritten_digits_images.csv", 'rb')
+send_data(file, clientSocket, "values")
+file = open("handwritten_digits_labels.csv", 'rb')
+send_data(file, clientSocket, 'labels')
 new_model_file = open("new_model.json", 'wb')
 receive_data(new_model_file, clientSocket, "model")
 new_model_file = open("new_model.h5", 'wb')
@@ -47,8 +52,8 @@ json_model.close()
 loaded_model = model_from_json(loaded_model)
 loaded_model.load_weights("new_model.h5")
 loaded_model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9),
-                             loss=tf.keras.losses.categorical_crossentropy,
-                             metrics=['accuracy'])
+                     loss=tf.keras.losses.categorical_crossentropy,
+                     metrics=['accuracy'])
 model = loaded_model
 dataX = pd.read_csv("handwritten_digits_images.csv")
 dataY = pd.read_csv("handwritten_digits_labels.csv")
