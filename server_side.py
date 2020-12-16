@@ -8,7 +8,7 @@ print('The server is ready to receive')
 
 while True:
     connectionSocket, addr = serverSocket.accept()
-    file = open('current_model.py', 'wb')
+    file = open('train_model.py', 'wb')
     package = connectionSocket.recv(1024)
     while package:
         print("Receiving")
@@ -16,7 +16,14 @@ while True:
         package = connectionSocket.recv(1024)
     print("received")
     file.close()
-    connectionSocket.close()
-    exec(open('current_model.py').read())
+
+    exec(open('train_model.py').read())
     print("ran?")
-    break
+    model_file = open('model.json', 'rb')
+    package = model_file.read(1024)
+    while package:
+        print("sending")
+        connectionSocket.send(package)
+        package = model_file.read(1024)
+    print("sent")
+    connectionSocket.close()
